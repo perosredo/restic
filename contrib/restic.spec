@@ -1,42 +1,55 @@
-Name: restic	
-Version: 0.9.2git.20180812	
-Release: 4%{?dist}
-Summary: restic is a backup program that is fast, efficient and secure.
+Name: restic
+Version: 0.18.0
+Release: 1%{?dist}
+Summary: Fast, secure, efficient backup program
 
 %global debug_package %{nil}
 
 Group: Applications/Archiving
-License: BSD 2-Clause
-URL: https://restic.net/	
-Source0: %{name}-%{version}.tar.gz
+License: BSD-2-Clause
+URL: https://restic.net/
+Source0: https://github.com/restic/restic/releases/download/v%{version}/restic-%{version}.tar.gz
 
-BuildRequires:	golang 
-Requires: /bin/bash	
+BuildRequires: golang >= 1.23
+BuildRequires: make
+BuildRequires: git
+Requires: /bin/bash
 
 %description
-restic is a program that does backups right. The design goals are:
+restic is a backup program that is fast, efficient and secure. It supports
+the three major operating systems (Linux, macOS, Windows) and a few more.
+Restic is a single executable that you can use to backup and restore your
+files from/to the cloud.
 
-Easy: Doing backups should be a frictionless process, otherwise you are tempted to skip it. Restic should be easy to configure and use, so that in the unlikely event of a data loss you can just restore it. Likewise, restoring data should not be complicated.
-
-Fast: Backing up your data with restic should only be limited by your network or hard disk bandwidth so that you can backup your files every day. Nobody does backups if it takes too much time. Restoring backups should only transfer data that is needed for the files that are to be restored, so that this process is also fast.
-
-Verifiable: Much more important than backup is restore, so restic enables you to easily verify that all data can be restored.
-
-Secure: Restic uses cryptography to guarantee confidentiality and integrity of your data. The location where the backup data is stored is assumed to be an untrusted environment (e.g. a shared space where others like system administrators are able to access your backups). Restic is built to secure your data against such attackers, by encrypting it with AES-256 in counter mode and authenticating it using Poly1305-AES.
-
-Efficient: With the growth of data, additional snapshots should only take the storage of the actual increment. Even more, duplicate data should be de-duplicated before it is actually written to the storage backend to save precious backup space.
-
-Versatile storage: Users can provide many different places to store the backups. Local, SFTP, Restics REST-Server, Amazon S3, Minio, Openstack Swift, Backblaze B2, Microsoft Azure Blob Storage, Google Cloud Storage and more by the usage of rclone.
-
-Free: restic is free software and licensed under the BSD 2-Clause License and actively developed on GitHub.
+Design goals:
+- Easy: Doing backups should be a frictionless process, otherwise you are
+  tempted to skip it.
+- Fast: Backing up your data with restic should only be limited by your
+  network or hard disk bandwidth.
+- Verifiable: Much more important than backup is restore, so restic enables
+  you to easily verify that all data can be restored.
+- Secure: Restic uses cryptography to guarantee confidentiality and integrity
+  of your data.
+- Efficient: With the growth of data, additional snapshots should only take
+  the storage of the actual increment.
+- Free: restic is free software and licensed under the BSD 2-Clause License.
 
 %prep
 %setup -q
 
-
 %build
-make %{?_smp_mflags}
-
+export CGO_ENABLED=0
+export GOOS=linux
+%ifarch x86_64
+export GOARCH=amd64
+%endif
+%ifarch aarch64
+export GOARCH=arm64
+%endif
+%ifarch i386 i686
+export GOARCH=386
+%endif
+go run build.go
 
 %install
 mkdir -p %{buildroot}%{_bindir}
@@ -44,33 +57,30 @@ mkdir -p %{buildroot}%{_mandir}/man1
 mkdir -p %{buildroot}%{_datarootdir}/zsh/site-functions
 mkdir -p %{buildroot}%{_datarootdir}/fish/vendor_completions.d
 mkdir -p %{buildroot}%{_datarootdir}/bash-completion/completions
-install -p -m 644 doc/man/* %{buildroot}%{_mandir}/man1/
-install -p -m 644 doc/zsh-completion.zsh %{buildroot}%{_datarootdir}/zsh/site-functions/_restic
-install -p -m 644 doc/fish-completion.fish %{buildroot}%{_datarootdir}/fish/vendor_completions.d/restic.fish
-install -p -m 644 doc/bash-completion.sh %{buildroot}%{_datarootdir}/bash-completion/completions/restic
-install -p -m 755 %{name} %{buildroot}%{_bindir}
+
+# Install binary
+install -p -m 755 restic %{buildroot}%{_bindir}/restic
+
+# Generate and install man pages
+./restic generate --man %{buildroot}%{_mandir}/man1/
+
+# Generate and install shell completions
+./restic generate --bash-completion %{buildroot}%{_datarootdir}/bash-completion/completions/restic
+./restic generate --zsh-completion %{buildroot}%{_datarootdir}/zsh/site-functions/_restic
+./restic generate --fish-completion %{buildroot}%{_datarootdir}/fish/vendor_completions.d/restic.fish
 
 %files
-%doc LICENSE
-%doc README.rst
-%{_bindir}/%{name}
-%dir %{_datadir}/zsh/site-functions
-%{_datadir}/zsh/site-functions/_restic
-%dir %{_datadir}/fish/vendor_completions.d
-%{_datadir}/fish/vendor_completions.d/restic.fish
-%dir %{_datadir}/bash-completion/
-%dir %{_datadir}/bash-completion/completions
-%{_datadir}/bash-completion/completions/restic
-%{_mandir}/man1/restic*.*
-
+%license LICENSE
+%doc README.md CHANGELOG.md
+%{_bindir}/restic
+%{_mandir}/man1/restic*.1*
+%{_datarootdir}/bash-completion/completions/restic
+%{_datarootdir}/zsh/site-functions/_restic
+%{_datarootdir}/fish/vendor_completions.d/restic.fish
 
 %changelog
-* Sun Aug 12 2018 Luc De Louw <luc@delouw.ch> - 0.9.2git.20180812-4
-- %license does not work with RHEL6, using %doc instead
-* Sun Aug 12 2018 Luc De Louw <luc@delouw.ch> - 0.9.2git.20180812-3
-- Better description
-* Sun Aug 12 2018 Luc De Louw <luc@delouw.ch> - 0.9.2git.20180812-2
-- Initial RPM build
-* Sun Aug 12 2018 Luc De Louw <luc@delouw.ch> - 0.9.2git.20180812-1
-- Initial RPM build
-
+* Fri Aug 16 2024 Petar Sredojevic <petar@sredojevic.ca> - 0.18.0-1
+- Adapted for AlmaLinux 10/RHEL 10 from upstream contrib/restic.spec
+- Updated to restic 0.18.0 (latest release)
+- Build configuration and packaging setup by Claude Code
+- Updated Go requirement to 1.23+ as per upstream requirements
