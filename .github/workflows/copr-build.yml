@@ -1,0 +1,59 @@
+name: Sync with Upstream and Build
+
+on:
+  schedule:
+    # Check daily for new releases
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Setup git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+      
+      - name: Sync with upstream
+        run: |
+          # Add upstream remote
+          git remote add upstream https://github.com/restic/restic.git || true
+          
+          # Fetch upstream tags
+          git fetch upstream --tags
+          
+          # Get latest upstream tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 upstream/master)
+          
+          # Check if we already have this tag
+          if git rev-parse "$LATEST_TAG" >/dev/null 2>&1; then
+            echo "Already up to date with $LATEST_TAG"
+            exit 0
+          fi
+          
+          # Merge upstream changes
+          git fetch upstream master
+          git merge upstream/master -m "Sync with upstream"
+          
+          # Keep our spec file changes
+          git checkout HEAD -- contrib/restic.spec
+          
+          # Push changes
+          git push origin master
+          git push origin --tags
+          
+          echo "new_release=true" >> $GITHUB_ENV
+          echo "Synced to $LATEST_TAG"
+      
+      - name: Trigger COPR build
+        if: env.new_release == 'true'
+        run: |
+          # Webhook will auto-trigger from the push
+          echo "COPR webhook should trigger automatically from push"
