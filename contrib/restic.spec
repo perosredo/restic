@@ -62,12 +62,12 @@ mkdir -p %{buildroot}%{_datarootdir}/bash-completion/completions
 install -p -m 755 restic %{buildroot}%{_bindir}/restic
 
 # Generate and install man pages
-./restic generate --man %{buildroot}%{_mandir}/man1/
+%{buildroot}%{_bindir}/restic generate --man %{buildroot}%{_mandir}/man1/
 
 # Generate and install shell completions
-./restic generate --bash-completion %{buildroot}%{_datarootdir}/bash-completion/completions/restic
-./restic generate --zsh-completion %{buildroot}%{_datarootdir}/zsh/site-functions/_restic
-./restic generate --fish-completion %{buildroot}%{_datarootdir}/fish/vendor_completions.d/restic.fish
+%{buildroot}%{_bindir}/restic generate --bash-completion %{buildroot}%{_datarootdir}/bash-completion/completions/restic
+%{buildroot}%{_bindir}/restic generate --zsh-completion %{buildroot}%{_datarootdir}/zsh/site-functions/_restic
+%{buildroot}%{_bindir}/restic generate --fish-completion %{buildroot}%{_datarootdir}/fish/vendor_completions.d/restic.fish
 
 %files
 %license LICENSE
