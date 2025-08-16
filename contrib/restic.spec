@@ -49,7 +49,7 @@ export GOARCH=arm64
 %ifarch i386 i686
 export GOARCH=386
 %endif
-go run build.go --enable-pie
+go run build.go --enable-pie -v
 
 %install
 mkdir -p %{buildroot}%{_bindir}
