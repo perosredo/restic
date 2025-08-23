@@ -1,8 +1,6 @@
 # Automated builds for Alma 10 via COPR
 
-[![Documentation](https://readthedocs.org/projects/restic/badge/?version=latest)](https://restic.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://github.com/restic/restic/workflows/test/badge.svg)](https://github.com/restic/restic/actions?query=workflow%3Atest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/restic/restic)](https://goreportcard.com/report/github.com/restic/restic)
+https://copr.fedorainfracloud.org/coprs/perosredo/restic-alma10/
 
 # Introduction
 
